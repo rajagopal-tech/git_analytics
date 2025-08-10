@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Analysis Result</title>
+</head>
+<body>
+  <h1>✅ Analysis Completed for: <%= repoName %></h1>
+
+  <h2>📊 Commit Metrics:</h2>
+  <ul>
+    <li><strong>Total Commits:</strong> <%= metrics.totalCommits %></li>
+    <li><strong>Conventional Format Used:</strong> <%= metrics.conventionalFormatUsed %></li>
+    <li><strong>Short Messages:</strong> <%= metrics.shortMessages %></li>
+    <li><strong>Detailed Messages:</strong> <%= metrics.detailedMessages %></li>
+    <li><strong>No Meaningful Structure:</strong> <%= metrics.noMeaningfulStructure %></li>
+    <li><strong>Average Message Length:</strong> <%= metrics.averageMessageLength %></li>
+  </ul>
+
+  <h2>🏷️ Top Prefixes:</h2>
+  <ul>
+    <% for (let prefix in metrics.topPrefixes) { %>
+      <li><%= prefix %>: <%= metrics.topPrefixes[prefix] %></li>
+    <% } %>
+  </ul>
+
+  <a href="/">🔄 Analyze Another Repo</a>
+</body>
+</html>
