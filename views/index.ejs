@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Git Analytics</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f5f5f5;
+    }
+    .category-card {
+      background: white;
+      border-radius: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    .success {
+      color: green;
+      font-weight: bold;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body class="container py-4">
+
+  <h1 class="mb-4 text-center">Git Developer Analytics</h1>
+
+  <form method="POST" action="/analyze" class="mb-4">
+    <div class="input-group">
+      <input type="text" name="repoUrl" placeholder="Enter Repository URL" class="form-control" required>
+      <button class="btn btn-primary">Analyze</button>
+    </div>
+  </form>
+
+  <% if (successMessage) { %>
+    <p class="success"><%= successMessage %></p>
+  <% } %>
+
+  <% if (repoData) { %>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Time & Date Activity</h5>
+          <p>Late Night Work: <%= repoData.timeDateActivity.lateNightPercentage %></p>
+          <p>Weekend Work: <%= repoData.timeDateActivity.weekendWork %></p>
+          <p>Most Active Day: <%= repoData.timeDateActivity.mostActiveDay %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Burnout Detection</h5>
+          <p>Burnout Risk: <%= repoData.burnoutDetection.burnoutRisk %></p>
+          <p>Longest Streak: <%= repoData.burnoutDetection.longestStreak %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Churn Rate</h5>
+          <p><%= repoData.churnRate %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Idle Periods</h5>
+          <p>Longest Idle: <%= repoData.idlePeriods.longestIdle %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Commit Message Structure</h5>
+          <p>Meaningful Messages: <%= repoData.commitMessageStructure.meaningfulMessages %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Languages Used</h5>
+          <p><%= repoData.languagesUsed.join(', ') %></p>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="category-card">
+          <h5>Large Commits</h5>
+          <p>Count: <%= repoData.largeCommits.count %></p>
+          <p>Biggest Commit: <%= repoData.largeCommits.biggestCommitSize %></p>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+</body>
+</html>

@@ -1,27 +1,38 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const { analyzeRepo } = require('./cloneAndAnalyze');
+const { analyzeRepo, getTimeDateActivitySummary } = require('./cloneAndAnalyze'); 
+// ^ Replace with your actual functions
 
 const app = express();
+app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views')); // ensure views path is correct
-
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public'))); // serve static files
+app.use(express.static('public'));
 
+// Render main page
 app.get('/', (req, res) => {
   res.render('index');
 });
 
+// Handle repo URL submission
 app.post('/analyze', async (req, res) => {
   const repoUrl = req.body.repoUrl;
-
   try {
-    const result = await analyzeRepo(repoUrl); // your logic
-    res.render('results', { metrics: result.metrics, repoName: result.repoName });
+    const result = await analyzeRepo(repoUrl);
+    res.json({ success: true, message: "Repository inserted successfully!", repoName: result.repoName });
   } catch (err) {
-    res.send('❌ Error: ' + err.message);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Fetch time & date activity summary
+app.get('/time-date-summary', async (req, res) => {
+  try {
+    const summary = await getTimeDateActivitySummary(); 
+    res.json({ success: true, summary });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

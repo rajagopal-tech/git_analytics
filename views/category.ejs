@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title><%= category.title %></title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        ul { margin-top: 20px; }
+        li { margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+    <h1><%= category.title %></h1>
+    <p>Repository: <%= repoUrl %></p>
+    <ul>
+        <% category.points.forEach(point => { %>
+            <li><%= point %></li>
+        <% }) %>
+    </ul>
+    <p><a href="/dashboard?repo=<%= repoUrl %>">⬅ Back to Dashboard</a></p>
+</body>
+</html>
