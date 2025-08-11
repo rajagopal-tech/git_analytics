@@ -1,39 +1,11 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-
-// Fake analytics function (replace with your actual code)
-async function analyzeRepo(repoUrl) {
-  // Simulate results from your analytics logic
-  return {
-    timeDateActivity: {
-      lateNightPercentage: "23%",
-      weekendWork: "18%",
-      mostActiveDay: "Wednesday",
-    },
-    burnoutDetection: {
-      burnoutRisk: "Low",
-      longestStreak: "12 days",
-    },
-    churnRate: "8%",
-    idlePeriods: {
-      longestIdle: "5 days",
-    },
-    commitMessageStructure: {
-      meaningfulMessages: "92%",
-    },
-    languagesUsed: ["JavaScript", "Python", "HTML"],
-    largeCommits: {
-      count: 3,
-      biggestCommitSize: "450 lines",
-    }
-  };
-}
+const { analyzeRepo } = require('./analyzer');
 
 const app = express();
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
-
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -49,12 +21,14 @@ app.post('/analyze', async (req, res) => {
 
   try {
     const data = await analyzeRepo(repoUrl);
-    res.render('index', { repoData: data, successMessage: "Inserted successfully!" });
+    res.render('index', { repoData: data, successMessage: "Analysis completed successfully!" });
   } catch (err) {
-    res.render('index', { repoData: null, successMessage: "Error analyzing repo" });
+    console.error(err);
+    res.render('index', { repoData: null, successMessage: `Error analyzing repo: ${err.message}` });
   }
 });
 
-app.listen(3000, () => {
-  console.log('Server running on http://localhost:3000');
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });
