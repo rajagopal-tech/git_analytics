@@ -31,6 +31,62 @@
     <p class="success"><%= successMessage %></p>
   <% } %>
 
+  <% /* --- SUMMARY SECTION FOR ALL REPOS --- */ %>
+  <% if (summaryData) { %>
+    <div class="mb-5">
+      <h2>Summary of All Repositories</h2>
+      <div class="row">
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Time & Date Activity</h5>
+            <p>Late Night Work: <%= summaryData.timeDateActivity.lateNightPercentage %></p>
+            <p>Weekend Work: <%= summaryData.timeDateActivity.weekendWork %></p>
+            <p>Most Active Day: <%= summaryData.timeDateActivity.mostActiveDay %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Burnout Detection</h5>
+            <p>Burnout Risk: <%= summaryData.burnoutDetection.burnoutRisk %></p>
+            <p>Longest Streak: <%= summaryData.burnoutDetection.longestStreak %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Churn Rate</h5>
+            <p><%= summaryData.churnRate %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Idle Periods</h5>
+            <p>Longest Idle: <%= summaryData.idlePeriods.longestIdle %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Commit Message Structure</h5>
+            <p>Meaningful Messages: <%= summaryData.commitMessageStructure.meaningfulMessages %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Languages Used</h5>
+            <p><%= summaryData.languagesUsed.join(', ') %></p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="category-card">
+            <h5>Large Commits</h5>
+            <p>Count: <%= summaryData.largeCommits.count %></p>
+            <p>Biggest Commit: <%= summaryData.largeCommits.biggestCommitSize %></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  <% } %>
+
+  <% /* --- INDIVIDUAL REPO RESULTS --- */ %>
   <% if (repoDataList) { %>
     <% repoDataList.forEach(repo => { %>
       <div class="mb-5">
