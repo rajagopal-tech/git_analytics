@@ -1,7 +1,7 @@
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
-const { analyzeRepo } = require('./analyzer');
+const { analyzeRepo } = require('./analyzer'); // Make sure this is optimized too!
 
 const app = express();
 app.set('view engine', 'ejs');
@@ -10,21 +10,36 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/', (req, res) => {
-  res.render('index', { repoData: null, successMessage: null });
+  res.render('index', { repoDataList: null, successMessage: null });
 });
 
 app.post('/analyze', async (req, res) => {
-  const repoUrl = req.body.repoUrl;
-  if (!repoUrl) {
-    return res.render('index', { repoData: null, successMessage: "Please enter a valid URL" });
+  const repoUrls = req.body.repoUrls
+    ?.split('\n')
+    .map(url => url.trim())
+    .filter(url => url.length > 0);
+
+  if (!repoUrls || repoUrls.length === 0) {
+    return res.render('index', { repoDataList: null, successMessage: "Please enter valid URLs" });
   }
 
   try {
-    const data = await analyzeRepo(repoUrl);
-    res.render('index', { repoData: data, successMessage: "Analysis completed successfully!" });
+    // Run all analyses in parallel for speed
+    const results = await Promise.all(
+      repoUrls.map(async (url) => {
+        try {
+          const data = await analyzeRepo(url);
+          return { url, data, error: null };
+        } catch (err) {
+          return { url, data: null, error: err.message };
+        }
+      })
+    );
+
+    res.render('index', { repoDataList: results, successMessage: "Analysis completed!" });
   } catch (err) {
     console.error(err);
-    res.render('index', { repoData: null, successMessage: `Error analyzing repo: ${err.message}` });
+    res.render('index', { repoDataList: null, successMessage: `Error analyzing repos: ${err.message}` });
   }
 });
 
