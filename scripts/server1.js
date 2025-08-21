@@ -1,4 +1,4 @@
-// server1.js
+// scripts/server1.js
 const express = require('express');
 const path = require('path');
 const bodyParser = require('body-parser');
@@ -36,7 +36,7 @@ app.post('/analyze', async (req, res) => {
       })
     );
 
-    const validResults = results.filter(r => !r.error);
+    const validResults = results.filter(r => !r.error && r.data);
     const summaryData = aggregateSummary(validResults);
 
     res.render('index', { repoDataList: results, summaryData, successMessage: 'Analysis completed!' });
