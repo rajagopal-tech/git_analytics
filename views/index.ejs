@@ -12,8 +12,6 @@
     .success{ color:green;font-weight:600;margin-bottom:10px; }
     .chart-wrap{ position:relative; height:280px; }
     .mh-120{ min-height:120px; }
-    .details { display:none; margin-top:10px; padding:10px; background:#fbfcff; border:1px dashed #dbe4ff; border-radius:10px; }
-    .details-toggle { font-size:0.9rem; color:#0d6efd; cursor:pointer; text-decoration:underline; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     .truncate { max-width: 820px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display:inline-block; vertical-align:middle; }
   </style>
@@ -42,18 +40,7 @@ https://github.com/org/repo2.git" required></textarea>
           <div class="category-card mh-120">
             <h6>Late Night Work</h6>
             <p class="mb-1"><strong><%= summaryData.timeDateActivity.lateNightPercentage %></strong></p>
-            <span class="details-toggle" onclick="toggleDetails('sum-late-night')">Show details</span>
-            <div id="sum-late-night" class="details">
-              <% if ((summaryData.timeDateActivity.lateNightDetails||[]).length) { %>
-                <ul class="small mono mb-0">
-                  <% summaryData.timeDateActivity.lateNightDetails.slice(0,200).forEach(d => { %>
-                    <li><strong><%= d.author %></strong> — <%= d.timeIST %> — <span class="truncate"><%= d.message %></span></li>
-                  <% }) %>
-                </ul>
-              <% } else { %>
-                <div class="small text-muted">No late night commits found.</div>
-              <% } %>
-            </div>
+            <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#sumLateNightModal">View table</button>
           </div>
         </div>
 
@@ -61,18 +48,7 @@ https://github.com/org/repo2.git" required></textarea>
           <div class="category-card mh-120">
             <h6>Weekend Work</h6>
             <p class="mb-1"><strong><%= summaryData.timeDateActivity.weekendWork %></strong></p>
-            <span class="details-toggle" onclick="toggleDetails('sum-weekend')">Show details</span>
-            <div id="sum-weekend" class="details">
-              <% if ((summaryData.timeDateActivity.weekendDetails||[]).length) { %>
-                <ul class="small mono mb-0">
-                  <% summaryData.timeDateActivity.weekendDetails.slice(0,200).forEach(d => { %>
-                    <li><strong><%= d.author %></strong> — <%= d.day %> — <%= d.timeIST %> — <span class="truncate"><%= d.message %></span></li>
-                  <% }) %>
-                </ul>
-              <% } else { %>
-                <div class="small text-muted">No weekend commits found.</div>
-              <% } %>
-            </div>
+            <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#sumWeekendModal">View table</button>
           </div>
         </div>
 
@@ -88,18 +64,7 @@ https://github.com/org/repo2.git" required></textarea>
             <h6>Burnout</h6>
             <p class="mb-0">Risk: <strong><%= summaryData.burnoutDetection.burnoutRisk %></strong></p>
             <p class="mb-0">Longest Streak: <strong><%= summaryData.burnoutDetection.longestStreak %></strong></p>
-            <span class="details-toggle" onclick="toggleDetails('sum-burnout')">Show details</span>
-            <div id="sum-burnout" class="details">
-              <% if ((summaryData.burnoutDetection.idlePeriodDetails||[]).length) { %>
-                <ul class="small mono mb-0">
-                  <% summaryData.burnoutDetection.idlePeriodDetails.slice(0,200).forEach(i => { %>
-                    <li><strong><%= i.resumedBy %></strong> — gap: <%= i.gapDays %> days — <%= i.fromIST %> → <%= i.toIST %></li>
-                  <% }) %>
-                </ul>
-              <% } else { %>
-                <div class="small text-muted">No long idle gaps found.</div>
-              <% } %>
-            </div>
+            <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#sumBurnoutModal">Idle gaps table</button>
           </div>
         </div>
       </div>
@@ -127,18 +92,7 @@ https://github.com/org/repo2.git" required></textarea>
           <div class="category-card">
             <h6>Churn Rate (Avg %)</h6>
             <p class="mb-1"><strong><%= summaryData.churnRate %></strong></p>
-            <span class="details-toggle" onclick="toggleDetails('sum-churn')">Show details</span>
-            <div id="sum-churn" class="details">
-              <% if ((summaryData.churnDetails||[]).length) { %>
-                <ul class="small mono mb-0">
-                  <% summaryData.churnDetails.slice(0,200).forEach(d => { %>
-                    <li><strong><%= d.author %></strong> — <%= d.timeIST %> — <span class="truncate"><%= d.message %></span></li>
-                  <% }) %>
-                </ul>
-              <% } else { %>
-                <div class="small text-muted">No churn-like commits found.</div>
-              <% } %>
-            </div>
+            <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#sumChurnModal">View churn table</button>
             <div class="chart-wrap"><canvas id="sumChurnGauge"></canvas></div>
           </div>
         </div>
@@ -148,18 +102,7 @@ https://github.com/org/repo2.git" required></textarea>
             <h6>Large Commits (All Repos)</h6>
             <p class="mb-1">Total Count: <strong><%= summaryData.largeCommits.count %></strong></p>
             <p class="mb-2">Biggest Commit: <strong><%= summaryData.largeCommits.biggestCommitSize %></strong></p>
-            <span class="details-toggle" onclick="toggleDetails('sum-large')">Show details</span>
-            <div id="sum-large" class="details">
-              <% if ((summaryData.largeCommits.details||[]).length) { %>
-                <ul class="small mono mb-0">
-                  <% summaryData.largeCommits.details.slice(0,200).forEach(d => { %>
-                    <li><strong><%= d.author %></strong> — <%= d.timeIST %> — <%= d.totalChanges %> changes — <span class="truncate"><%= d.message %></span></li>
-                  <% }) %>
-                </ul>
-              <% } else { %>
-                <div class="small text-muted">No large commits found.</div>
-              <% } %>
-            </div>
+            <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#sumLargeModal">View table</button>
             <div class="chart-wrap"><canvas id="sumLargeByYear"></canvas></div>
           </div>
         </div>
@@ -195,6 +138,156 @@ https://github.com/org/repo2.git" required></textarea>
         </div>
       </div>
     </div>
+
+    <!-- ===== Summary MODALS (tables) ===== -->
+    <!-- Late Night -->
+    <div class="modal fade" id="sumLateNightModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Late Night Commits (All Repos)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <% const _ln = (summaryData.timeDateActivity.lateNightDetails||[]).slice(0,200); %>
+          <% if (_ln.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Message</th><th>Hash</th></tr></thead>
+                <tbody>
+                  <% _ln.forEach((d,i)=>{ %>
+                    <tr>
+                      <td><%= i+1 %></td>
+                      <td class="mono"><%= d.author %></td>
+                      <td class="mono"><%= d.timeIST %></td>
+                      <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                      <td class="mono"><%= d.hash %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-muted">No late night commits found.</div>
+          <% } %>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- Weekend -->
+    <div class="modal fade" id="sumWeekendModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Weekend Commits (All Repos)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <% const _wk = (summaryData.timeDateActivity.weekendDetails||[]).slice(0,200); %>
+          <% if (_wk.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead><tr><th>#</th><th>Author</th><th>Day</th><th>Time (IST)</th><th>Message</th><th>Hash</th></tr></thead>
+                <tbody>
+                  <% _wk.forEach((d,i)=>{ %>
+                    <tr>
+                      <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                      <td class="mono"><%= d.day %></td><td class="mono"><%= d.timeIST %></td>
+                      <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                      <td class="mono"><%= d.hash %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-muted">No weekend commits found.</div>
+          <% } %>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- Burnout / Idle -->
+    <div class="modal fade" id="sumBurnoutModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Idle Gaps (All Repos)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <% const _idle = (summaryData.burnoutDetection.idlePeriodDetails||[]).slice(0,200); %>
+          <% if (_idle.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead><tr><th>#</th><th>Resumed By</th><th>Gap (days)</th><th>From (IST)</th><th>To (IST)</th><th>Hash</th></tr></thead>
+                <tbody>
+                  <% _idle.forEach((i,idx)=>{ %>
+                    <tr>
+                      <td><%= idx+1 %></td>
+                      <td class="mono"><%= i.resumedBy %></td>
+                      <td class="mono"><%= i.gapDays %></td>
+                      <td class="mono"><%= i.fromIST %></td>
+                      <td class="mono"><%= i.toIST %></td>
+                      <td class="mono"><%= i.resumedHash %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-muted">No long idle gaps found.</div>
+          <% } %>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- Churn -->
+    <div class="modal fade" id="sumChurnModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Churn-like Commits (All Repos)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <% const _ch = (summaryData.churnDetails||[]).slice(0,200); %>
+          <% if (_ch.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Message</th><th>Hash</th></tr></thead>
+                <tbody>
+                  <% _ch.forEach((d,i)=>{ %>
+                    <tr>
+                      <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                      <td class="mono"><%= d.timeIST %></td>
+                      <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                      <td class="mono"><%= d.hash %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-muted">No churn-like commits found.</div>
+          <% } %>
+        </div>
+      </div></div>
+    </div>
+
+    <!-- Large commits -->
+    <div class="modal fade" id="sumLargeModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 class="modal-title">Large Commits (All Repos)</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+        <div class="modal-body">
+          <% const _lg = (summaryData.largeCommits.details||[]).slice(0,200); %>
+          <% if (_lg.length) { %>
+            <div class="table-responsive">
+              <table class="table table-sm table-striped align-middle">
+                <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Total Changes</th><th>Message</th><th>Hash</th></tr></thead>
+                <tbody>
+                  <% _lg.forEach((d,i)=>{ %>
+                    <tr>
+                      <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                      <td class="mono"><%= d.timeIST %></td>
+                      <td class="mono"><%= d.totalChanges %></td>
+                      <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                      <td class="mono"><%= d.hash %></td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="text-muted">No large commits found.</div>
+          <% } %>
+        </div>
+      </div></div>
+    </div>
   <% } %>
 
   <!-- Per-repo sections -->
@@ -210,18 +303,7 @@ https://github.com/org/repo2.git" required></textarea>
             <div class="category-card">
               <h6>Late Night</h6>
               <p class="mb-1"><%= repo.data.timeDateActivity.lateNightPercentage %></p>
-              <span class="details-toggle" onclick="toggleDetails('repo-late-<%= idx %>')">Show details</span>
-              <div id="repo-late-<%= idx %>" class="details">
-                <% if ((repo.data.timeDateActivity.lateNightDetails||[]).length) { %>
-                  <ul class="small mono mb-0">
-                    <% repo.data.timeDateActivity.lateNightDetails.forEach(d=>{ %>
-                      <li><strong><%= d.author %></strong> — <%= d.timeIST %> — <span class="truncate"><%= d.message %></span></li>
-                    <% }) %>
-                  </ul>
-                <% } else { %>
-                  <div class="small text-muted">No late night commits.</div>
-                <% } %>
-              </div>
+              <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#repo-late-<%= idx %>-modal">View table</button>
             </div>
           </div>
 
@@ -229,18 +311,7 @@ https://github.com/org/repo2.git" required></textarea>
             <div class="category-card">
               <h6>Weekend Work</h6>
               <p class="mb-1"><%= repo.data.timeDateActivity.weekendWork %></p>
-              <span class="details-toggle" onclick="toggleDetails('repo-weekend-<%= idx %>')">Show details</span>
-              <div id="repo-weekend-<%= idx %>" class="details">
-                <% if ((repo.data.timeDateActivity.weekendDetails||[]).length) { %>
-                  <ul class="small mono mb-0">
-                    <% repo.data.timeDateActivity.weekendDetails.forEach(d=>{ %>
-                      <li><strong><%= d.author %></strong> — <%= d.day %> — <%= d.timeIST %> — <span class="truncate"><%= d.message %></span></li>
-                    <% }) %>
-                  </ul>
-                <% } else { %>
-                  <div class="small text-muted">No weekend commits.</div>
-                <% } %>
-              </div>
+              <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#repo-weekend-<%= idx %>-modal">View table</button>
             </div>
           </div>
 
@@ -256,18 +327,7 @@ https://github.com/org/repo2.git" required></textarea>
               <h6>Burnout</h6>
               <p class="mb-0">Risk: <%= repo.data.burnoutDetection.burnoutRisk %></p>
               <p class="mb-0">Streak: <%= repo.data.burnoutDetection.longestStreak %></p>
-              <span class="details-toggle" onclick="toggleDetails('repo-burnout-<%= idx %>')">Show details</span>
-              <div id="repo-burnout-<%= idx %>" class="details">
-                <% if ((repo.data.burnoutDetection.idlePeriodDetails||[]).length) { %>
-                  <ul class="small mono mb-0">
-                    <% repo.data.burnoutDetection.idlePeriodDetails.forEach(i=>{ %>
-                      <li><strong><%= i.resumedBy %></strong> — gap: <%= i.gapDays %> days — <%= i.fromIST %> → <%= i.toIST %></li>
-                    <% }) %>
-                  </ul>
-                <% } else { %>
-                  <div class="small text-muted">No long idle gaps.</div>
-                <% } %>
-              </div>
+              <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#repo-burnout-<%= idx %>-modal">Idle gaps table</button>
             </div>
           </div>
         </div>
@@ -294,18 +354,7 @@ https://github.com/org/repo2.git" required></textarea>
               <h6>Languages</h6>
               <div class="chart-wrap"><canvas id="langs-<%= idx %>"></canvas></div>
               <div class="small text-muted mt-2"><%= repo.data.languagesUsed.join(', ') %></div>
-              <span class="details-toggle" onclick="toggleDetails('repo-msgs-<%= idx %>')">Show message details</span>
-              <div id="repo-msgs-<%= idx %>" class="details">
-                <% if ((repo.data.commitMessageStructure.commitMessageDetails||[]).length) { %>
-                  <ul class="small mono mb-0">
-                    <% repo.data.commitMessageStructure.commitMessageDetails.slice(0,50).forEach(m => { %>
-                      <li><strong><%= m.author %></strong> — <%= m.timeIST %> — <%= m.isConventional ? '✅' : '⚠️' %> <span class="truncate"><%= m.message %></span></li>
-                    <% }) %>
-                  </ul>
-                <% } else { %>
-                  <div class="small text-muted">No commit message details.</div>
-                <% } %>
-              </div>
+              <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#repo-msgs-<%= idx %>-modal">Commit messages table</button>
             </div>
           </div>
 
@@ -321,18 +370,9 @@ https://github.com/org/repo2.git" required></textarea>
               <h6>Large Commits</h6>
               <p class="mb-1">Count: <strong><%= repo.data.largeCommits.count %></strong></p>
               <p class="mb-2">Biggest: <strong><%= repo.data.largeCommits.biggestCommitSize %></strong></p>
-              <span class="details-toggle" onclick="toggleDetails('repo-large-<%= idx %>')">Show details</span>
-              <div id="repo-large-<%= idx %>" class="details">
-                <% if ((repo.data.largeCommits.details||[]).length) { %>
-                  <ul class="small mono mb-0">
-                    <% repo.data.largeCommits.details.forEach(d=>{ %>
-                      <li><strong><%= d.author %></strong> — <%= d.timeIST %> — <%= d.totalChanges %> changes — <span class="truncate"><%= d.message %></span></li>
-                    <% }) %>
-                  </ul>
-                <% } else { %>
-                  <div class="small text-muted">No large commits (&gt;100 changes).</div>
-                <% } %>
-              </div>
+              <button class="btn btn-link p-0" data-bs-toggle="modal" data-bs-target="#repo-large-<%= idx %>-modal">View table</button>
+              <!-- Add missing canvas to match JS below -->
+              <div class="chart-wrap"><canvas id="largeByYear-<%= idx %>"></canvas></div>
             </div>
           </div>
         </div>
@@ -352,17 +392,155 @@ https://github.com/org/repo2.git" required></textarea>
             </div>
           </div>
         </div>
+
+        <!-- ===== Per-repo MODALS (tables) ===== -->
+        <!-- Late Night -->
+        <div class="modal fade" id="repo-late-<%= idx %>-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Late Night — <%= repo.url %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+              <% const r_ln = (repo.data.timeDateActivity.lateNightDetails||[]); %>
+              <% if (r_ln.length) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Message</th><th>Hash</th></tr></thead>
+                    <tbody>
+                      <% r_ln.forEach((d,i)=>{ %>
+                        <tr>
+                          <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                          <td class="mono"><%= d.timeIST %></td>
+                          <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                          <td class="mono"><%= d.hash %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %><div class="text-muted">No late night commits.</div><% } %>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Weekend -->
+        <div class="modal fade" id="repo-weekend-<%= idx %>-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Weekend — <%= repo.url %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+              <% const r_wk = (repo.data.timeDateActivity.weekendDetails||[]); %>
+              <% if (r_wk.length) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>#</th><th>Author</th><th>Day</th><th>Time (IST)</th><th>Message</th><th>Hash</th></tr></thead>
+                    <tbody>
+                      <% r_wk.forEach((d,i)=>{ %>
+                        <tr>
+                          <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                          <td class="mono"><%= d.day %></td><td class="mono"><%= d.timeIST %></td>
+                          <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                          <td class="mono"><%= d.hash %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %><div class="text-muted">No weekend commits.</div><% } %>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Burnout / Idle -->
+        <div class="modal fade" id="repo-burnout-<%= idx %>-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Idle Gaps — <%= repo.url %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+              <% const r_idle = (repo.data.burnoutDetection.idlePeriodDetails||[]); %>
+              <% if (r_idle.length) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>#</th><th>Resumed By</th><th>Gap (days)</th><th>From (IST)</th><th>To (IST)</th><th>Hash</th></tr></thead>
+                    <tbody>
+                      <% r_idle.forEach((iRow,i)=>{ %>
+                        <tr>
+                          <td><%= i+1 %></td>
+                          <td class="mono"><%= iRow.resumedBy %></td>
+                          <td class="mono"><%= iRow.gapDays %></td>
+                          <td class="mono"><%= iRow.fromIST %></td>
+                          <td class="mono"><%= iRow.toIST %></td>
+                          <td class="mono"><%= iRow.resumedHash %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %><div class="text-muted">No long idle gaps.</div><% } %>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Large commits -->
+        <div class="modal fade" id="repo-large-<%= idx %>-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Large Commits — <%= repo.url %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+              <% const r_lg = (repo.data.largeCommits.details||[]); %>
+              <% if (r_lg.length) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Total Changes</th><th>Message</th><th>Hash</th></tr></thead>
+                    <tbody>
+                      <% r_lg.forEach((d,i)=>{ %>
+                        <tr>
+                          <td><%= i+1 %></td><td class="mono"><%= d.author %></td>
+                          <td class="mono"><%= d.timeIST %></td>
+                          <td class="mono"><%= d.totalChanges %></td>
+                          <td class="mono"><span class="truncate"><%= d.message %></span></td>
+                          <td class="mono"><%= d.hash %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %><div class="text-muted">No large commits (&gt;100 changes).</div><% } %>
+            </div>
+          </div></div>
+        </div>
+
+        <!-- Commit messages -->
+        <div class="modal fade" id="repo-msgs-<%= idx %>-modal" tabindex="-1" aria-hidden="true">
+          <div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+            <div class="modal-header"><h5 class="modal-title">Commit Messages — <%= repo.url %></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+              <% const r_msgs = (repo.data.commitMessageStructure.commitMessageDetails||[]).slice(0,200); %>
+              <% if (r_msgs.length) { %>
+                <div class="table-responsive">
+                  <table class="table table-sm table-striped align-middle">
+                    <thead><tr><th>#</th><th>Author</th><th>Time (IST)</th><th>Conventional</th><th>Message</th><th>Hash</th></tr></thead>
+                    <tbody>
+                      <% r_msgs.forEach((m,i)=>{ %>
+                        <tr>
+                          <td><%= i+1 %></td><td class="mono"><%= m.author %></td>
+                          <td class="mono"><%= m.timeIST %></td>
+                          <td><%= m.isConventional ? '✅' : '⚠️' %></td>
+                          <td class="mono"><span class="truncate"><%= m.message %></span></td>
+                          <td class="mono"><%= m.hash %></td>
+                        </tr>
+                      <% }) %>
+                    </tbody>
+                  </table>
+                </div>
+              <% } else { %><div class="text-muted">No commit message details.</div><% } %>
+            </div>
+          </div></div>
+        </div>
+
       <% } %>
     </div>
   <% }) } %>
 
-  <script>
-    function toggleDetails(id) {
-      const el = document.getElementById(id);
-      if (!el) return;
-      el.style.display = (el.style.display === 'block') ? 'none' : 'block';
-    }
+  <!-- Bootstrap JS (needed for modals) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+  <script>
     // ===== Summary charts =====
     <% if (summaryData) { %>
       const sumDaily = <%- JSON.stringify(summaryData.timeDateActivity.dailyActivity) %>;
@@ -401,7 +579,6 @@ https://github.com/org/repo2.git" required></textarea>
         options: { responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true, max:100 } } }
       });
 
-      // Year-wise % charts (Fixed to use summaryData.*ByYearPct)
       const sumLateYear = <%- JSON.stringify(summaryData.lateNightByYearPct || {}) %>;
       new Chart(document.getElementById('sumLateNightYear'), {
         type: 'line',
