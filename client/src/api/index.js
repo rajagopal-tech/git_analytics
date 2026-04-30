@@ -29,4 +29,12 @@ export const deleteClone = (repoName) =>
 export const clearAllClones = () =>
   api.delete('/clones').then(r => r.data);
 
+// Feature 2: Compare repos
+export const compareRepos = (repoNames) =>
+  api.post('/compare', { repoNames }).then(r => r.data);
+
+// Feature 3: History
+export const getRepoHistory = (repoName) =>
+  api.get(`/history/${repoName}`).then(r => r.data);
+
 export default api;

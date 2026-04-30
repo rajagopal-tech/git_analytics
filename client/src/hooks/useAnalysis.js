@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { analyzeRepos, getAllResults, deleteRepoResult, getSummary, getClones, deleteClone, clearAllClones } from '../api';
+import { analyzeRepos, getAllResults, deleteRepoResult, getSummary, getClones, deleteClone, clearAllClones, compareRepos, getRepoHistory } from '../api';
 
 export function useAnalyze() {
   const queryClient = useQueryClient();
@@ -69,5 +69,22 @@ export function useClearAllClones() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clones'] });
     }
+  });
+}
+
+// Feature 2: Compare
+export function useCompare() {
+  return useMutation({
+    mutationFn: (repoNames) => compareRepos(repoNames)
+  });
+}
+
+// Feature 3: History
+export function useRepoHistory(repoName) {
+  return useQuery({
+    queryKey: ['history', repoName],
+    queryFn: () => getRepoHistory(repoName),
+    enabled: !!repoName,
+    staleTime: 60 * 1000
   });
 }

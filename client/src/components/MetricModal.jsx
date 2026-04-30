@@ -352,32 +352,58 @@ export default function MetricModal({ metricKey, data, isOpen, onClose }) {
 
   /* ── 8. Languages ─────────────────────────────────────────────────── */
   if (metricKey === 'languages') {
+    const breakdown = m.languageBreakdown || [];
     return (
-      <DetailModal title="Languages Detected" isOpen={isOpen} onClose={onClose}>
+      <DetailModal title="Language Breakdown" isOpen={isOpen} onClose={onClose}>
         <div className="space-y-5">
           <div className="flex flex-wrap gap-3">
             <Pill label="Languages" value={m.languagesUsed?.length} color="#fb923c" />
+            {breakdown[0] && <Pill label="Primary" value={breakdown[0].lang} color="#fb923c" />}
+            {breakdown[0] && <Pill label="Primary %" value={breakdown[0].pct} color="#fb923c" />}
           </div>
           <div className="p-4 rounded-xl bg-gray-800 border border-gray-700 text-sm text-gray-300 leading-relaxed">
-            <strong className="text-white">How it's detected:</strong> File extensions from the most recent commit
-            are mapped to language names. This is a fast heuristic — it reflects what was touched last, not the
-            full repo composition.
+            <strong className="text-white">How it's detected:</strong> All tracked files via{' '}
+            <code className="text-green-400 font-mono text-xs">git ls-files</code> are scanned and
+            grouped by extension — giving a full repo composition, not just the latest commit.
           </div>
-          <Section title="Detected Languages">
-            <LanguageBar languagesUsed={m.languagesUsed} />
+          <Section title="Full Breakdown">
+            <LanguageBar languagesUsed={m.languagesUsed} languageBreakdown={m.languageBreakdown} />
           </Section>
-          <Section title="Full List">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {(m.languagesUsed || []).map((lang, i) => (
-                <div key={lang} className="flex items-center gap-2 p-2.5 rounded-lg bg-gray-800 border border-gray-700">
-                  <span className="w-2 h-2 rounded-full shrink-0" style={{
-                    backgroundColor: ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#84cc16','#f97316','#14b8a6'][i % 10]
-                  }} />
-                  <span className="text-sm text-gray-200">{lang}</span>
-                </div>
-              ))}
-            </div>
-          </Section>
+          {breakdown.length > 0 && (
+            <Section title="File Count by Language">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="text-left text-xs text-gray-500 uppercase pb-2 pr-4">Language</th>
+                    <th className="text-left text-xs text-gray-500 uppercase pb-2 pr-4">Files</th>
+                    <th className="text-left text-xs text-gray-500 uppercase pb-2">Share</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-800/60">
+                  {breakdown.map((l, i) => (
+                    <tr key={l.lang}>
+                      <td className="py-2 pr-4 text-gray-200 font-medium">{l.lang}</td>
+                      <td className="py-2 pr-4 text-gray-400 font-mono">{l.count}</td>
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full"
+                              style={{
+                                width: l.pct,
+                                backgroundColor: ['#6366f1','#8b5cf6','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899','#84cc16','#f97316','#14b8a6'][i % 10]
+                              }}
+                            />
+                          </div>
+                          <span className="text-xs text-gray-500">{l.pct}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </Section>
+          )}
         </div>
       </DetailModal>
     );

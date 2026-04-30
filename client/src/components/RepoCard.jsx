@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import {
   Moon, Calendar, Flame, MessageSquare, GitCommit,
   Code2, Zap, ChevronDown, ChevronUp, ExternalLink, Trash2, BarChart2, Loader2
@@ -9,14 +9,18 @@ import MetricModal from './MetricModal';
 import DailyActivityBar from './charts/DailyActivityBar';
 import YearlyCommitsLine from './charts/YearlyCommitsLine';
 import AuthorPie from './charts/AuthorPie';
+import LanguageBar from './charts/LanguageBar';
+import ExportButton from './ExportButton';           // Feature 1
+import AuthorDrilldown from './AuthorDrilldown';     // Feature 4
+import HistoryChart from './HistoryChart';           // Feature 3
 
 export default function RepoCard({ data, repoUrl, onDelete, isDeleting }) {
   const [expanded, setExpanded] = useState(false);
   const [modal, setModal] = useState(null);
+  const cardRef = useRef(null);                      // Feature 1 — PDF target
 
   const m = data;
 
-  /* ── 8 metric definitions ─────────────────────────────────────────── */
   const METRICS = [
     {
       key: 'commits',
@@ -86,14 +90,14 @@ export default function RepoCard({ data, repoUrl, onDelete, isDeleting }) {
       icon: Code2,
       accent: 'pink',
       label: 'Languages',
-      description: 'Languages detected from file extensions in the most recent commit.',
+      description: 'Full repo language breakdown from git ls-files.',
       value: m.languagesUsed?.length,
       sub: m.languagesUsed?.slice(0, 3).join(', ') + (m.languagesUsed?.length > 3 ? '…' : '')
     }
   ];
 
   return (
-    <div className="card space-y-5">
+    <div className="card space-y-5" ref={cardRef}>
       {/* ── Header ──────────────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
@@ -114,25 +118,21 @@ export default function RepoCard({ data, repoUrl, onDelete, isDeleting }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           <RiskBadge risk={m.burnoutDetection?.burnoutRisk} />
+          {/* Feature 1: Export */}
+          <ExportButton data={m} repoName={m.repoName} cardRef={cardRef} />
           <button
             onClick={onDelete}
             disabled={isDeleting}
             className="p-1.5 text-gray-600 hover:text-red-400 rounded-lg transition-colors"
             title="Delete cached analysis"
           >
-            {isDeleting
-              ? <Loader2 size={15} className="animate-spin" />
-              : <Trash2 size={15} />
-            }
+            {isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
           </button>
-          <button
-            onClick={() => setExpanded(v => !v)}
-            className="btn-ghost text-sm"
-          >
+          <button onClick={() => setExpanded(v => !v)} className="btn-ghost text-sm">
             {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-            {expanded ? 'Less' : 'Charts'}
+            {expanded ? 'Less' : 'More'}
           </button>
         </div>
       </div>
@@ -153,7 +153,22 @@ export default function RepoCard({ data, repoUrl, onDelete, isDeleting }) {
         ))}
       </div>
 
-      {/* ── Expanded Charts ─────────────────────────────────────────── */}
+      {/* ── Feature 5: Language breakdown ───────────────────────────── */}
+      <div>
+        <p className="stat-label mb-2">Language Breakdown</p>
+        <LanguageBar
+          languagesUsed={m.languagesUsed}
+          languageBreakdown={m.languageBreakdown}
+        />
+      </div>
+
+      {/* ── Feature 4: Team health + author drill-down ──────────────── */}
+      <AuthorDrilldown
+        authorMetrics={m.authorMetrics}
+        healthScore={m.healthScore}
+      />
+
+      {/* ── Expanded section ────────────────────────────────────────── */}
       {expanded && (
         <div className="space-y-4 pt-2 border-t border-gray-800">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -169,6 +184,11 @@ export default function RepoCard({ data, repoUrl, onDelete, isDeleting }) {
           <div className="card-sm">
             <p className="stat-label mb-3">Author Contributions</p>
             <AuthorPie authorActivity={m.authorActivity} />
+          </div>
+
+          {/* Feature 3: History trends */}
+          <div className="card-sm">
+            <HistoryChart repoName={m.repoName} />
           </div>
         </div>
       )}

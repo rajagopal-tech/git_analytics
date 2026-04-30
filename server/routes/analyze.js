@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
-const Analysis = require('../models/Analysis');
+const { Analysis, AnalysisHistory } = require('../models/Analysis');
 const { analyzeRepo, aggregateSummary } = require('../services/analyzer');
 
 const CLONE_BASE = path.join(__dirname, '../../cloned_repos');
@@ -41,7 +41,7 @@ router.post('/analyze', async (req, res) => {
           console.log(`Analyzing ${url}...`);
           const data = await analyzeRepo(url, timezone);
 
-          // Save to database
+          // Save / update latest analysis
           await Analysis.findOneAndUpdate(
             { repoUrl: url },
             {
@@ -53,6 +53,28 @@ router.post('/analyze', async (req, res) => {
             },
             { upsert: true, new: true }
           );
+
+          // FEATURE 3: Save lightweight history snapshot
+          await AnalysisHistory.create({
+            repoUrl: url,
+            repoName: data.repoName,
+            timezone,
+            analyzedAt: new Date(),
+            snapshot: {
+              totalCommits:      data.totalCommits,
+              healthScore:       data.healthScore,
+              burnoutRisk:       data.burnoutDetection?.burnoutRisk,
+              longestStreak:     data.burnoutDetection?.longestStreak,
+              lateNightPct:      data.timeDateActivity?.lateNightPercentage,
+              weekendPct:        data.timeDateActivity?.weekendWork,
+              churnRate:         data.churnRate,
+              conventionalPct:   data.commitMessageStructure?.meaningfulMessages,
+              largeCommitsCount: data.largeCommits?.count,
+              languageCount:     data.languagesUsed?.length,
+              authorCount:       Object.keys(data.authorActivity || {}).length,
+              yearlyCommits:     data.yearlyCommits
+            }
+          });
 
           return {
             url,
@@ -198,6 +220,75 @@ router.get('/summary', async (req, res) => {
       success: false,
       message: err.message
     });
+  }
+});
+
+// GET /api/history/:repoName - Get trend history for a repo (Feature 3)
+router.get('/history/:repoName', async (req, res) => {
+  try {
+    const { repoName } = req.params;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const history = await AnalysisHistory.find({ repoName })
+      .select('analyzedAt snapshot')
+      .sort({ analyzedAt: -1 })
+      .limit(limit);
+
+    res.json({ success: true, repoName, history });
+  } catch (err) {
+    console.error('Error fetching history:', err);
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/compare - Compare multiple repos side-by-side (Feature 2)
+router.post('/compare', async (req, res) => {
+  try {
+    const { repoNames } = req.body;
+
+    if (!repoNames || !Array.isArray(repoNames) || repoNames.length < 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provide at least 2 repoNames to compare'
+      });
+    }
+
+    const analyses = await Analysis.find({ repoName: { $in: repoNames } });
+
+    if (analyses.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No analyses found for the given repo names'
+      });
+    }
+
+    const comparison = analyses.map(a => {
+      const m = a.metrics;
+      return {
+        repoName:         a.repoName,
+        repoUrl:          a.repoUrl,
+        analyzedAt:       a.analyzedAt,
+        totalCommits:     m.totalCommits,
+        healthScore:      m.healthScore,
+        burnoutRisk:      m.burnoutDetection?.burnoutRisk,
+        longestStreak:    m.burnoutDetection?.longestStreak,
+        lateNightPct:     m.timeDateActivity?.lateNightPercentage,
+        weekendPct:       m.timeDateActivity?.weekendWork,
+        churnRate:        m.churnRate,
+        conventionalPct:  m.commitMessageStructure?.meaningfulMessages,
+        largeCommits:     m.largeCommits?.count,
+        languageCount:    m.languagesUsed?.length,
+        languages:        m.languagesUsed,
+        authorCount:      Object.keys(m.authorActivity || {}).length,
+        mostActiveDay:    m.timeDateActivity?.mostActiveDay,
+        yearlyCommits:    m.yearlyCommits
+      };
+    });
+
+    res.json({ success: true, comparison });
+  } catch (err) {
+    console.error('Compare error:', err);
+    res.status(500).json({ success: false, message: err.message });
   }
 });
 

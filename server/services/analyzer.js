@@ -26,41 +26,43 @@ function parsePercentToNumber(s) {
 }
 
 // Parse git log --stat output to extract commit stats in one pass
+// BUG FIX: The header line uses --pretty=format:%H|%an|%ad|%s
+// %s (subject) can contain '|', and stat lines never start with a 40-char hex hash.
+// Use a SHA-1 pattern to reliably detect commit header lines.
+const SHA_RE = /^[0-9a-f]{40}\|/;
+
 function parseGitLogStat(rawOutput) {
   const commits = [];
   const lines = rawOutput.split('\n');
-  
+
   let currentCommit = null;
-  
+
   for (const line of lines) {
-    // Commit header: hash|author|date|message
-    if (line.includes('|')) {
+    if (SHA_RE.test(line)) {
+      // New commit header
       if (currentCommit) commits.push(currentCommit);
-      
-      const [hash, author, dateStr, ...messageParts] = line.split('|');
-      const message = messageParts.join('|'); // Handle pipes in commit messages
-      
-      currentCommit = {
-        hash,
-        author,
-        dateStr,
-        message,
-        insertions: 0,
-        deletions: 0
-      };
-    }
-    // Stats line: " 5 files changed, 120 insertions(+), 30 deletions(-)"
-    else if (currentCommit && line.includes('changed')) {
+
+      const pipeIdx = line.indexOf('|');
+      const hash = line.slice(0, pipeIdx);
+      const rest = line.slice(pipeIdx + 1);
+
+      // rest = "author|dateStr|subject"  (subject may contain '|')
+      const parts = rest.split('|');
+      const author  = parts[0] || '';
+      const dateStr = parts[1] || '';
+      const message = parts.slice(2).join('|');
+
+      currentCommit = { hash, author, dateStr, message, insertions: 0, deletions: 0 };
+    } else if (currentCommit && line.includes('changed')) {
+      // Stats line: " 3 files changed, 120 insertions(+), 30 deletions(-)"
       const insertMatch = line.match(/(\d+)\s+insertions?\(\+\)/);
       const deleteMatch = line.match(/(\d+)\s+deletions?\(-\)/);
-      
       if (insertMatch) currentCommit.insertions = parseInt(insertMatch[1], 10);
-      if (deleteMatch) currentCommit.deletions = parseInt(deleteMatch[1], 10);
+      if (deleteMatch) currentCommit.deletions  = parseInt(deleteMatch[1], 10);
     }
   }
-  
+
   if (currentCommit) commits.push(currentCommit);
-  
   return commits;
 }
 
@@ -227,9 +229,10 @@ async function analyzeRepo(repoUrl, timezone = 'Asia/Kolkata') {
   const weekendWork = ((weekendCommits / totalCommits) * 100).toFixed(2) + '%';
   const mostActiveDay = Object.entries(dailyActivity).sort((a, b) => b[1] - a[1])[0][0];
 
-  // Burnout detection
+  // Burnout detection — guard against single-commit repos
   commits.sort((a, b) => a.date - b.date);
-  let longestStreak = 1, currentStreak = 1;
+  let longestStreak = commits.length > 0 ? 1 : 0;
+  let currentStreak = 1;
   for (let i = 1; i < commits.length; i++) {
     const prev = new Date(commits[i - 1].date.toDateString());
     const curr = new Date(commits[i].date.toDateString());
@@ -264,15 +267,12 @@ async function analyzeRepo(repoUrl, timezone = 'Asia/Kolkata') {
   const churnCommits = churnDetails.length;
   const churnRate = ((churnCommits / totalCommits) * 100).toFixed(2) + '%';
 
-  // Conventional commits
+  // Conventional commits — cap commitMessageDetails at 500 to avoid MongoDB doc size limits
   const meaningfulCount = commitMessageDetails.filter(c => c.isConventional).length;
   const meaningfulMessages = ((meaningfulCount / totalCommits) * 100).toFixed(2) + '%';
+  const commitMessageDetailsCapped = commitMessageDetails.slice(0, 500);
 
-  // Languages used
-  const newestCommitHash = commits[commits.length - 1].hash;
-  const filesRaw = await repoGit.show(['--name-only', '--pretty=format:', newestCommitHash]).catch(() => '');
-  const fileExts = filesRaw.split('\n').filter(f => f.includes('.')).map(f => path.extname(f).toLowerCase());
-  
+  // FEATURE 5: Full-repo language detection via git ls-files
   const extToLang = {
     '.js': 'JavaScript', '.ts': 'TypeScript', '.jsx': 'JavaScript', '.tsx': 'TypeScript',
     '.py': 'Python', '.java': 'Java', '.go': 'Go', '.rb': 'Ruby', '.php': 'PHP',
@@ -280,18 +280,89 @@ async function analyzeRepo(repoUrl, timezone = 'Asia/Kolkata') {
     '.html': 'HTML', '.css': 'CSS', '.scss': 'SCSS', '.json': 'JSON', '.md': 'Markdown',
     '.yml': 'YAML', '.yaml': 'YAML', '.xml': 'XML', '.sql': 'SQL', '.sh': 'Shell'
   };
-  
-  const langsSet = new Set();
-  fileExts.forEach(ext => { if (extToLang[ext]) langsSet.add(extToLang[ext]); });
-  const languagesUsed = Array.from(langsSet);
 
-  // Large commits stats
+  const allFilesRaw = await repoGit.raw(['ls-files']).catch(() => '');
+  const langCounts = {};
+  allFilesRaw.split('\n').filter(Boolean).forEach(f => {
+    const ext = path.extname(f).toLowerCase();
+    const lang = extToLang[ext];
+    if (lang) langCounts[lang] = (langCounts[lang] || 0) + 1;
+  });
+
+  const totalLangFiles = Object.values(langCounts).reduce((a, b) => a + b, 0) || 1;
+  const languageBreakdown = Object.entries(langCounts)
+    .sort(([, a], [, b]) => b - a)
+    .map(([lang, count]) => ({
+      lang,
+      count,
+      pct: ((count / totalLangFiles) * 100).toFixed(1) + '%'
+    }));
+  const languagesUsed = languageBreakdown.map(l => l.lang);
+
+  // FEATURE 4: Per-author detailed metrics
+  const authorMetrics = {};
+  commits.forEach(c => {
+    const a = c.author;
+    if (!authorMetrics[a]) {
+      authorMetrics[a] = {
+        name: a,
+        totalCommits: 0,
+        lateNight: 0,
+        weekend: 0,
+        churn: 0,
+        conventional: 0,
+        largeCommits: 0,
+        insertions: 0,
+        deletions: 0,
+        firstCommit: c.date,
+        lastCommit: c.date,
+        activeDays: new Set()
+      };
+    }
+    const am = authorMetrics[a];
+    am.totalCommits++;
+    am.insertions += c.insertions;
+    am.deletions += c.deletions;
+    am.activeDays.add(c.date.toDateString());
+    if (c.date < am.firstCommit) am.firstCommit = c.date;
+    if (c.date > am.lastCommit) am.lastCommit = c.date;
+    if (isLateNight(c.date)) am.lateNight++;
+    if (isWeekend(c.date)) am.weekend++;
+    if (churnRegex.test(c.message)) am.churn++;
+    if (conventionalRegex.test(c.message)) am.conventional++;
+    if (c.totalChanges > 100) am.largeCommits++;
+  });
+
+  // Serialise (Sets aren't JSON-safe)
+  const authorMetricsList = Object.values(authorMetrics).map(am => ({
+    name: am.name,
+    totalCommits: am.totalCommits,
+    lateNightPct: ((am.lateNight / am.totalCommits) * 100).toFixed(1) + '%',
+    weekendPct: ((am.weekend / am.totalCommits) * 100).toFixed(1) + '%',
+    churnPct: ((am.churn / am.totalCommits) * 100).toFixed(1) + '%',
+    conventionalPct: ((am.conventional / am.totalCommits) * 100).toFixed(1) + '%',
+    largeCommits: am.largeCommits,
+    insertions: am.insertions,
+    deletions: am.deletions,
+    activeDays: am.activeDays.size,
+    firstCommit: formatDateTime(am.firstCommit, tzAbbrev),
+    lastCommit: formatDateTime(am.lastCommit, tzAbbrev)
+  })).sort((a, b) => b.totalCommits - a.totalCommits);
+
+  // Large commits stats — declare FIRST so healthScore can use it
   const largeCommitsCount = largeCommitDetails.length;
   const biggestCommitSize = largeCommitDetails.length > 0
     ? Math.max(...largeCommitDetails.map(c => c.totalChanges))
     : 0;
 
-  // Year-wise percentages
+  // FEATURE 4: Team health score (0–100)
+  const lateNightScore   = Math.max(0, 100 - parsePercentToNumber(lateNightPercentage) * 2);
+  const weekendScore     = Math.max(0, 100 - parsePercentToNumber(weekendWork) * 2);
+  const churnScore       = Math.max(0, 100 - parsePercentToNumber(churnRate) * 1.5);
+  const qualityScore     = parsePercentToNumber(meaningfulMessages);
+  const largeCommitRatio = totalCommits > 0 ? (largeCommitsCount / totalCommits) * 100 : 0;
+  const largeScore       = Math.max(0, 100 - largeCommitRatio * 3);
+  const healthScore      = Math.round((lateNightScore + weekendScore + churnScore + qualityScore + largeScore) / 5);
   const years = Object.keys(yearlyCommits).sort();
   const lateNightByYearPct = {};
   const weekendByYearPct = {};
@@ -328,9 +399,12 @@ async function analyzeRepo(repoUrl, timezone = 'Asia/Kolkata') {
     },
     commitMessageStructure: {
       meaningfulMessages,
-      commitMessageDetails
+      commitMessageDetails: commitMessageDetailsCapped
     },
     languagesUsed,
+    languageBreakdown,
+    authorMetrics: authorMetricsList,
+    healthScore,
     largeCommits: {
       count: largeCommitsCount,
       biggestCommitSize: biggestCommitSize ? `${biggestCommitSize} lines` : 'N/A',
