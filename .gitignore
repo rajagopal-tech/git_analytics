@@ -139,6 +139,9 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 
-cloned_repos
-metrics
-summaries
+cloned_repos/
+metrics/
+summaries/
+.kiro_tmp/
+server/.env
+client/.env

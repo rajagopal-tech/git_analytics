@@ -1,0 +1,19 @@
+{
+  "name": "git-dev-analytics-server",
+  "version": "1.0.0",
+  "description": "Git Developer Analytics - Express REST API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "mongoose": "^8.16.4",
+    "simple-git": "^3.28.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
