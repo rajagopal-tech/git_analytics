@@ -3,6 +3,7 @@
   "version": "2.0.0",
   "description": "Git Developer Analytics — MERN Stack",
   "scripts": {
+    "preinstall": "npm install --prefix server",
     "build": "npm install --prefix server",
     "start": "node server/index.js",
     "server": "node server/index.js",
