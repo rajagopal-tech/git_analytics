@@ -67,9 +67,16 @@ function parseGitLogStat(rawOutput) {
 }
 
 async function analyzeRepo(repoUrl, timezone = 'Asia/Kolkata') {
-  if (!repoUrl.startsWith('https://github.com/') || !repoUrl.endsWith('.git')) {
-    throw new Error('Invalid GitHub repo URL. Must start with https://github.com/ and end with .git');
+  // Normalise URL: ensure it ends with .git and handles missing suffix
+  let normalizedUrl = repoUrl.trim();
+  if (normalizedUrl.endsWith('/')) normalizedUrl = normalizedUrl.slice(0, -1);
+  if (!normalizedUrl.endsWith('.git')) normalizedUrl += '.git';
+
+  if (!normalizedUrl.startsWith('https://github.com/')) {
+    throw new Error('Invalid GitHub repo URL. Must start with https://github.com/ (HTTPS only)');
   }
+
+  repoUrl = normalizedUrl;
 
   // Map common timezone names to offset hours
   const timezoneOffsets = {
