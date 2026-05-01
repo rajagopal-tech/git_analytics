@@ -8,6 +8,11 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/gitAnalytics';
 
+// Startup diagnostics
+console.log(`🔧 PORT: ${PORT}`);
+console.log(`🔧 MONGO_URI set: ${!!process.env.MONGO_URI} — starts with: ${MONGO_URI.slice(0, 25)}...`);
+console.log(`🔧 CLIENT_URL: ${process.env.CLIENT_URL || '(not set)'}`);
+
 // Middleware
 const allowedOrigins = process.env.CLIENT_URL
   ? process.env.CLIENT_URL.split(',').map(o => o.trim())
