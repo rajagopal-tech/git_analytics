@@ -1,5 +1,6 @@
 [build]
-  command = "npm run dev"
+  base = "client"
+  command = "npm run build"
   publish = "dist"
 
 [[redirects]]
