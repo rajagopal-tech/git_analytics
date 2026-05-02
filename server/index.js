@@ -21,9 +21,13 @@ if (!process.env.MONGO_URI) {
 }
 
 // Middleware
-const allowedOrigins = process.env.CLIENT_URL
-  ? process.env.CLIENT_URL.split(',').map(o => o.trim())
-  : ['http://localhost:5173'];
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://gitanalyticsgithub.netlify.app',
+  ...(process.env.CLIENT_URL
+    ? process.env.CLIENT_URL.split(',').map(o => o.trim())
+    : [])
+];
 
 app.use(cors({
   origin: (origin, callback) => {
