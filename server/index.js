@@ -8,10 +8,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/gitAnalytics';
 
-// Startup diagnostics
-console.log(`🔧 PORT: ${PORT}`);
-console.log(`🔧 MONGO_URI set: ${!!process.env.MONGO_URI} — starts with: ${MONGO_URI.slice(0, 25)}...`);
-console.log(`🔧 CLIENT_URL: ${process.env.CLIENT_URL || '(not set)'}`);
+// Startup diagnostics — printed before anything else
+console.log('=== ENV CHECK ===');
+console.log('MONGO_URI:', process.env.MONGO_URI ? process.env.MONGO_URI.slice(0, 30) + '...' : 'NOT SET');
+console.log('PORT:', PORT);
+console.log('CLIENT_URL:', process.env.CLIENT_URL || 'NOT SET');
+console.log('=================');
+
+if (!process.env.MONGO_URI) {
+  console.error('FATAL: MONGO_URI is not set. Add it in Railway Variables tab.');
+  process.exit(1);
+}
 
 // Middleware
 const allowedOrigins = process.env.CLIENT_URL
